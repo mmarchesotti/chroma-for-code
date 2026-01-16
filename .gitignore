@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+
+# Build/Compiled output (standard TS output folders)
+dist/
+build/
+out/
+
+# Environment Variables (CRITICAL for security)
+.env
+.env.local
+.env.*.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs/
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE settings (optional but recommended)
+.vscode/
+.idea/
