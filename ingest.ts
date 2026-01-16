@@ -5,7 +5,7 @@ import * as dotenv from "dotenv";
 
 dotenv.config();
 
-async function ingest(): Promise<void> {
+export async function ingest(): Promise<void> {
 	const files = await walkRepo("../my-nextjs-chatbot-app");
 
 	const modelName = "text-embedding-3-large"

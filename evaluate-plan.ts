@@ -1,12 +1,16 @@
 import OpenAI from "openai";
 import { zodResponseFormat } from "openai/helpers/zod.js";
+import type { TodoStep } from "./agent-tasks.js";
+import type { StepOutcome } from "./tool.js";
+import type { PlanDecision } from "./tool.js";
+import { PlanDecisionSchema } from "./tool.js";
 
 export async function evaluate(args: {
 	userQuery: string;
 	lastOutcome: StepOutcome;
 	remainingSteps: TodoStep[];
 }): Promise<PlanDecision> {
-	const { planTask, lastOutcome, remainingSteps } = args;
+	const { userQuery, lastOutcome, remainingSteps } = args;
 
 	const openai = new OpenAI({
 		apiKey: process.env.OPENAI_API_KEY,
@@ -21,7 +25,7 @@ export async function evaluate(args: {
 		{
 			role: "developer",
 			content:
-				`Overall task: ${planTask}\n` +
+				`Overall task: ${userQuery}\n` +
 				`Remaining steps: ${JSON.stringify(remainingSteps, null, 2)}\n` +
 				`Last outcome: ${JSON.stringify(lastOutcome, null, 2)}\n` +
 				"Rules:\n" +
@@ -37,5 +41,5 @@ export async function evaluate(args: {
 		response_format: zodResponseFormat(PlanDecisionSchema, "plan_decision"),
 	});
 
-	return resp.choices[0].message.parsed!;
+	return resp.choices[0]?.message.parsed!;
 }

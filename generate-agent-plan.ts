@@ -1,6 +1,9 @@
 import { zodResponseFormat } from "openai/helpers/zod.js";
 import { TodoPlanSchema } from "./agent-tasks.js";
 import OpenAI from "openai";
+import z from "zod";
+
+type TodoPlan = z.infer<typeof TodoPlanSchema>;
 
 export async function generatePlan(
 	prompt: string,
@@ -23,5 +26,5 @@ export async function generatePlan(
 		response_format: zodResponseFormat(TodoPlanSchema, "todo_plan"),
 	});
 
-	return completion.choices[0].message.parsed as TodoPlan;
+	return completion.choices[0]?.message.parsed as TodoPlan;
 }

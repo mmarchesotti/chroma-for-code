@@ -2,12 +2,14 @@ import { symbolSearchTool } from "./symbol-search-tool.js";
 import type { Tool } from "./tool.js";
 import { runStep } from "./run-step.js";
 import { evaluate } from "./evaluate-plan.js";
+import { GitRepo } from "./git-repo.js";
+import type { StepOutcome } from "./tool.js";
 
-async function agent(userQuery: string, repo: GitRepo) {
+export async function agent(userQuery: string, repo: GitRepo) {
 	const collection = await index(repo);
 
 	const tools: Tool[] = [
-		symbolSearchTool,
+		symbolSearchTool(collection),
 		// regexSearchTool,
 		// semanticSearchTool,
 		// ftSearchTool,

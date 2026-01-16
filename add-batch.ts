@@ -4,7 +4,7 @@ import type { Collection } from "chromadb";
 const BATCH_SIZE = 100;
 
 export async function addBatch(
-	collection: Collection, chunks: Chunk[], batchSize: number = BATCH_SIZE
+	chunks: Chunk[], collection: Collection, batchSize: number = BATCH_SIZE
 ) {
 	const batch = chunks.slice(0, batchSize);
 	await collection.add({

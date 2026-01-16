@@ -1,18 +1,20 @@
 import { CloudClient } from "chromadb";
 import { indexDiffs } from "./index-diffs.js";
+import { GitRepo } from "./git-repo.js";
+import { indexAllFiles } from "./index-repo.js";
 
-async function storeCommit(repo: GitRepo) {
+export async function storeCommit(repo: GitRepo) {
 	const client = new CloudClient();
 
-	const commits = await client.getOrCreate({
+	const commits = await client.getOrCreateCollection({
 		name: "commits"
 	});
 
 	const head = await repo.HEAD();
 
-	const latest = await commits.get<{ latest: boolean }>(
+	const latest = await commits.get<{ latest: boolean }>({
 		where: { latest: true }
-	);
+	});
 
 	let latestCommitID = latest.ids.length ? latest.ids[0] : undefined;
 

@@ -1,3 +1,4 @@
+import { encoding_for_model, type TiktokenModel } from "tiktoken";
 import { uuidv4, ZodUUID } from "zod";
 
 export type Chunk = {
@@ -5,12 +6,16 @@ export type Chunk = {
 	document: string,
 	startLine: number,
 	endLine: number,
+	symbol: string | undefined,
 }
 
-export function split(src: string, startLine: number, encoder: ): Chunk[] {
+export function split(src: string, startLine: number, model: TiktokenModel): Chunk[] {
 	if (!src.trim()) {
 		return [];
 	}
+
+	const encoder = encoding_for_model(model);
+	const MAX_TOKENS = getMaxTokens(model);
 
 	// split the input source code into lines
 	const lines = src.split('\n');
@@ -21,7 +26,7 @@ export function split(src: string, startLine: number, encoder: ): Chunk[] {
 	let currentTokens = 0;
 	let splitStart = startLine;
 
-	const splits = [];
+	const splits: Chunk[] = [];
 
 	const flush = () => {
 		splits.push({
@@ -29,6 +34,7 @@ export function split(src: string, startLine: number, encoder: ): Chunk[] {
 			document: currentLines.join('\n'),
 			startLine: splitStart,
 			endLine: splitStart + currentLines.length - 1,
+			symbol: undefined,
 		});
 	};
 
@@ -51,10 +57,16 @@ export function split(src: string, startLine: number, encoder: ): Chunk[] {
 		currentTokens += lineTokens;
 	}
 
+	encoder.free();
+
 	// add any remaining lines to their own split
 	if (currentLines.length > 0) {
 		flush();
 	}
 
 	return splits;
+}
+
+function getMaxTokens(model: TiktokenModel): number {
+	return 100;
 }

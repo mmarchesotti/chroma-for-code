@@ -2,8 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import Parser from 'tree-sitter'
 import { LANG_CONFIG } from './chunk.js';
-import SyntaxNode from 'tree-sitter';
-import { encoding_for_model, type TiktokenModel } from 'tiktoken';
+import type { SyntaxNode } from 'tree-sitter';
+import { type TiktokenModel } from 'tiktoken';
 import { split } from './split-chunk.js';
 
 export function chunkFile(filePath: string, model: TiktokenModel): SyntaxNode[] {
@@ -16,8 +16,6 @@ export function chunkFile(filePath: string, model: TiktokenModel): SyntaxNode[] 
 	if (!langConfig) {
 		return []; // or fallback to naive line-based chunking
 	}
-
-	const encoder = encoding_for_model(model);
 
 	// Read the file's contents
 	const fileContent = fs.readFileSync(filePath, 'utf-8');
@@ -44,7 +42,7 @@ export function chunkFile(filePath: string, model: TiktokenModel): SyntaxNode[] 
 		if (cursor < node.startIndex) {
 			const gap = fileContent.slice(cursor, node.startIndex);
 			// add gap as a chunk
-			chunks.push(..split(gap, line));
+			chunks.push(...split(gap, line));
 		}
 
 		const nodeContent = fileContent.slice(node.startIndex, node.endIndex);
@@ -54,7 +52,7 @@ export function chunkFile(filePath: string, model: TiktokenModel): SyntaxNode[] 
 		chunks.push(...nodeSplits.map((n) => {
 			return {
 				...n,
-				symbol: node.childForName("name")?.text // symbol node (class)
+				symbol: node.childForFieldName("name")?.text // symbol node (class)
 			}
 		}));
 
@@ -62,10 +60,8 @@ export function chunkFile(filePath: string, model: TiktokenModel): SyntaxNode[] 
 		line = node.endPosition.row;
 	}
 
-	encoder.free();
-
 	// add more metadata
-	return chunks.map((chunk, i) => {
+	return chunks.map((chunk, _) => {
 		return {
 			...chunk,
 			filePath,
@@ -80,12 +76,10 @@ function collectTreeNodes(
 ): SyntaxNode[] {
 	const treeNodes: SyntaxNode[] = [];
 	if (wantedNodes.has(node.type)) {
-		treeNodes.push({
-			node,
-		});
+		treeNodes.push(node);
 	} else {
 		for (const child of node.children) {
-			treeNodes.push(...this.collectTreeNodes(child, wantedNodes));
+			treeNodes.push(...collectTreeNodes(child, wantedNodes));
 		}
 	}
 	return treeNodes;

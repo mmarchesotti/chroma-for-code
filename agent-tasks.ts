@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const TodoStepsSchema = z.object({
+export const TodoStepSchema = z.object({
 	id: z.string(),
 	title: z.string(),
 	description: z.string().describe("Written in first person"),
@@ -9,5 +9,8 @@ export const TodoStepsSchema = z.object({
 
 export const TodoPlanSchema = z.object({
 	id: z.string(),
-	steps: z.array(TodoStepsSchema).min(1),
+	steps: z.array(TodoStepSchema).min(1),
 });
+
+export type TodoStep = z.infer<typeof TodoStepSchema>;
+export type TodoPlan = z.infer<typeof TodoPlanSchema>;

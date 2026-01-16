@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { TodoStepsSchema } from './agent-tasks.js';
+import { TodoStepSchema } from './agent-tasks.js';
 
 export type Tool = {
 	name: string;
@@ -20,10 +20,11 @@ export const StepOutcomeSchema = z.object({
 		),
 });
 
-const PlanDecisionSchema = z.object({
+export const PlanDecisionSchema = z.object({
 	decision: z.enum(["continue", "finalize", "revise"]),
 	reason: z.string(),
-	newSteps: z.array(TodoStepsSchema).default([]),
+	newSteps: z.array(TodoStepSchema).default([]),
 });
 
+export type StepOutcome = z.infer<typeof StepOutcomeSchema>;
 export type PlanDecision = z.infer<typeof PlanDecisionSchema>;
