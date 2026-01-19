@@ -2,11 +2,13 @@ import { ChromaClient } from "chromadb";
 import { chunkFile } from "./chunk-file.js";
 import type { Chunk } from "./split-chunk.js";
 import { addBatch } from "./add-batch.js";
+import { GitRepo } from "./git-repo.js";
+import type { TiktokenModel } from "tiktoken";
 
 export async function indexDiffs(
-	repo: GitRepo, client: ChromaClient, oldCommit: string, newCommit: string
+	repo: GitRepo, client: ChromaClient, oldCommit: string, newCommit: string, modelName: TiktokenModel, batchSize: number
 ) {
-	const diffs = repo.diffs(oldCommit, newCommit);
+	const diffs = await repo.diffs(oldCommit, newCommit);
 
 	const oldCollection = await client.getCollection({
 		name: oldCommit,
@@ -17,22 +19,22 @@ export async function indexDiffs(
 	const allFiles = [...diffs.added, ...diffs.deleted, ...diffs.modified]
 
 	await newCollection.delete({
-		where: { filePath: "$in" allFiles }
+		where: { filePath: { "$in": allFiles } }
 	})
 
 	let chunks: Chunk[] = [];
 	for (const filePath of [...diffs.added, ...diffs.modified]) {
 		const fileChunks = chunkFile(
 			filePath,
-			newCollection.configuration.embeddingFunction.getConfig().model_name
+			modelName,
 		);
 		chunks.push(...fileChunks);
-		if (chunks.length > BATCH_SIZE) {
-			chunks = await addBatch(chunks, newCollection);
+		if (chunks.length > batchSize) {
+			chunks = await addBatch(chunks, newCollection, batchSize);
 		}
 	}
 
 	while (chunks.length > 0) {
-		chunks = await addBatch(chunks, newCollection);
+		chunks = await addBatch(chunks, newCollection, batchSize);
 	}
 }

@@ -3,6 +3,7 @@ import { StepOutcomeSchema, type Tool } from './tool.js';
 import { zodResponseFormat } from 'openai/helpers/zod.js';
 import type { TodoStep } from './agent-tasks.js';
 import type { StepOutcome } from './tool.js';
+import type { ChatCompletionTool } from 'openai/resources';
 
 export async function runStep(opts: {
 	step: TodoStep;
@@ -51,12 +52,19 @@ export async function runStep(opts: {
 		});
 		turns += 1;
 
-		const assistant = resp.choices[0].message;
-		const call = assistant.tool_calls?.[0];
+		const assistant = resp.choices[0]?.message;
+		const call = assistant?.tool_calls?.[0];
 
-		if (!call) break;
+		if (!call || call.type != 'function') break;
 
 		const tool = tools.find((t) => t.name === call.function.name)!;
+		if (!tool) {
+			return {
+				status: "failed",
+				stepId: step.id,
+				summary: `Model hallucinated a tool: ${call.function.name}`,
+			};
+		}
 		const args = tool.parse(call.function.arguments);
 		const result = await tool.execute(args);
 
@@ -88,5 +96,19 @@ export async function runStep(opts: {
 		response_format: zodResponseFormat(StepOutcomeSchema, "step_outcome"),
 	});
 
-	return finalize.choices[0].message.parsed!;
+	return finalize.choices[0]?.message.parsed!;
+}
+
+function toOpenAITools(tools: Tool[]): ChatCompletionTool[] {
+	const openaiTools = tools.map(tool => {
+		return {
+			type: "function" as const,
+			function: {
+				name: tool.name,
+				description: tool.description,
+				parameters: tool.parameters,
+			}
+		}
+	});
+	return openaiTools;
 }

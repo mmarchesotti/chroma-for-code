@@ -1,10 +1,8 @@
 import type { Chunk } from "./split-chunk.js";
 import type { Collection } from "chromadb";
 
-const BATCH_SIZE = 100;
-
 export async function addBatch(
-	chunks: Chunk[], collection: Collection, batchSize: number = BATCH_SIZE
+	chunks: Chunk[], collection: Collection, batchSize: number
 ) {
 	const batch = chunks.slice(0, batchSize);
 	await collection.add({

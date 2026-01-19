@@ -7,8 +7,9 @@ import ignore from 'ignore'
 import { GitRepo } from "./git-repo.js";
 import { chunkFile } from "./chunk-file.js";
 import { addBatch } from "./add-batch.js";
+import type { TiktokenModel } from "tiktoken";
 
-export async function indexAllFiles(repo: GitRepo, client: ChromaClient, commitID: string) {
+export async function indexAllFiles(repo: GitRepo, client: ChromaClient, commitID: string, modelName: TiktokenModel, batchSize: number) {
 	const ig = ignore();
 	ig.add(".git");
 
@@ -19,7 +20,7 @@ export async function indexAllFiles(repo: GitRepo, client: ChromaClient, commitI
 	}
 
 	const embeddingFunction = new OpenAIEmbeddingFunction({
-		modelName: "text-embedding-3-large"
+		modelName: modelName
 	});
 
 	const collection = await client.createCollection({
@@ -45,10 +46,10 @@ export async function indexAllFiles(repo: GitRepo, client: ChromaClient, commitI
 			if (entry.isDirectory()) {
 				await walkRepo(absPath);
 			} else if (entry.isFile()) {
-				const fileChunks = chunkFile(filePath, embeddingFunction.getConfig().model_name);
+				const fileChunks = chunkFile(filePath, modelName);
 				chunks.push(...fileChunks);
 				if (chunks.length > batchSize) {
-					chunks = await addBatch(chunks, collection);
+					chunks = await addBatch(chunks, collection, batchSize);
 				}
 			}
 		}
@@ -56,6 +57,6 @@ export async function indexAllFiles(repo: GitRepo, client: ChromaClient, commitI
 
 	await walkRepo(repo.path);
 	while (chunks.length > 0) {
-		chunks = await addBatch(chunks, collection);
+		chunks = await addBatch(chunks, collection, batchSize);
 	}
 }

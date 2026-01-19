@@ -5,7 +5,7 @@ export type Tool = {
 	name: string;
 	description: string;
 	parameters: Record<string, unknown>;
-	parse?: (input: unknown) => any;
+	parse: (input: unknown) => any;
 	execute: (args: any) => Promise<any>;
 };
 

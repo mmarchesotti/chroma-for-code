@@ -4,6 +4,9 @@ import { runStep } from "./run-step.js";
 import { evaluate } from "./evaluate-plan.js";
 import { GitRepo } from "./git-repo.js";
 import type { StepOutcome } from "./tool.js";
+import { generatePlan } from "./generate-agent-plan.js";
+import { finalizeAnswer } from "./finalize-plan.js";
+import { index } from "./sync-repo.js";
 
 export async function agent(userQuery: string, repo: GitRepo) {
 	const collection = await index(repo);
@@ -17,12 +20,12 @@ export async function agent(userQuery: string, repo: GitRepo) {
 		// runShellCommandTool
 	];
 
-	let plan = await generateTodoList(userQuery);
+	let steps = (await generatePlan(userQuery)).steps;
 
 	const outcomes: StepOutcome[] = [];
 
-	while (plan.length > 0) {
-		const step = plan[0];
+	while (steps.length > 0) {
+		const step = steps[0]!;
 
 		const outcome = await runStep({
 			step,
@@ -30,16 +33,16 @@ export async function agent(userQuery: string, repo: GitRepo) {
 			tools,
 		});
 
-		plan.shift();
+		steps.shift();
 		outcomes.push(outcome);
 		if (outcome.status === "failed" || outcome.status === "timeout") {
 			break;
 		}
 
 		const decision = await evaluate({
-			planTask: userQuery,
+			userQuery: userQuery,
 			lastOutcome: outcome,
-			remainingSteps: plan,
+			remainingSteps: steps,
 		});
 
 		if (decision.decision === "finalize") {
@@ -47,12 +50,12 @@ export async function agent(userQuery: string, repo: GitRepo) {
 		}
 
 		if (decision.decision === "revise") {
-			plan = decision.newSteps;
+			steps = decision.newSteps;
 		}
 	}
 
 	const finalAnswer = await finalizeAnswer({
-		planTask: userQuery,
+		userQuery: userQuery,
 		outcomes,
 	});
 

@@ -6,7 +6,9 @@ export type Chunk = {
 	document: string,
 	startLine: number,
 	endLine: number,
-	symbol: string | undefined,
+	symbol: string | null,
+	filePath: string | null,
+	language: string | null,
 }
 
 export function split(src: string, startLine: number, model: TiktokenModel): Chunk[] {
@@ -17,11 +19,9 @@ export function split(src: string, startLine: number, model: TiktokenModel): Chu
 	const encoder = encoding_for_model(model);
 	const MAX_TOKENS = getMaxTokens(model);
 
-	// split the input source code into lines
 	const lines = src.split('\n');
 	const NEW_LINE_TOKEN = encoder.encode('\n').length;
 
-	// initialize the current split
 	let currentLines: string[] = [];
 	let currentTokens = 0;
 	let splitStart = startLine;
@@ -34,32 +34,27 @@ export function split(src: string, startLine: number, model: TiktokenModel): Chu
 			document: currentLines.join('\n'),
 			startLine: splitStart,
 			endLine: splitStart + currentLines.length - 1,
-			symbol: undefined,
+			symbol: null,
+			filePath: null,
+			language: null,
 		});
 	};
 
-	// for every line
 	for (const line of lines) {
-		// tokenize the line
 		const lineTokens = encoder.encode(line).length + NEW_LINE_TOKEN;
-		// if the token size of the current split + current line tokens > maxTokens
 		if (currentTokens + lineTokens > MAX_TOKENS && currentLines.length > 0) {
-			// flush the current split
 			flush();
-			// reset the current split
 			splitStart += currentLines.length;
 			currentLines = [];
 			currentTokens = 0;
 		}
 
-		// otherwise, add the line to the current split
 		currentLines.push(line);
 		currentTokens += lineTokens;
 	}
 
 	encoder.free();
 
-	// add any remaining lines to their own split
 	if (currentLines.length > 0) {
 		flush();
 	}
@@ -68,5 +63,6 @@ export function split(src: string, startLine: number, model: TiktokenModel): Chu
 }
 
 function getMaxTokens(model: TiktokenModel): number {
+	// TODO
 	return 100;
 }

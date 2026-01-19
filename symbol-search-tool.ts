@@ -1,5 +1,6 @@
 import type { Collection } from "chromadb";
 import type { Tool } from "./tool.js";
+import { z } from 'zod'
 
 export const symbolSearchTool = (collection: Collection): Tool => {
 	return {
@@ -16,21 +17,27 @@ export const symbolSearchTool = (collection: Collection): Tool => {
 		},
 		parse: (input) => SymbolSearchArgsSchema.parse(input),
 		execute: async (query: string, includePaths?: string[]) => {
+			const whereFilter: Record<string, any> = { symbol: query };
+			if (includePaths) {
+				whereFilter.filePath = { "$in": includePaths }
+			}
 			const records = await collection.get<{ startLine: number; filePath: string }>({
-				where: {
-					symbol: query,
-					filePath: includePaths ? { "$in": includePaths } : undefined
-				}
+				where: whereFilter
 			})
 
 			if (!records.ids.length) {
 				return `${query} not found`
 			}
 
-			let content = `// file ${records.metadatas[0].filePath}\n`
-			content += records.rows().sort((a, b) => a.startLine - b.startLine).join("\n");
+			let content = `// file ${records.metadatas[0]?.filePath}\n`
+			content += records.rows().sort((a, b) => a.metadata!.startLine - b.metadata!.startLine).join("\n");
 
 			return content;
 		}
 	}
 }
+
+const SymbolSearchArgsSchema = z.object({
+	// TODO
+});
+

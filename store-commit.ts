@@ -2,6 +2,9 @@ import { CloudClient } from "chromadb";
 import { indexDiffs } from "./index-diffs.js";
 import { GitRepo } from "./git-repo.js";
 import { indexAllFiles } from "./index-repo.js";
+import type { TiktokenModel } from "tiktoken";
+
+const BATCH_SIZE = 100;
 
 export async function storeCommit(repo: GitRepo) {
 	const client = new CloudClient();
@@ -16,10 +19,12 @@ export async function storeCommit(repo: GitRepo) {
 		where: { latest: true }
 	});
 
-	let latestCommitID = latest.ids.length ? latest.ids[0] : undefined;
+	let latestCommitID = latest.ids.length ? latest.ids[0] : null;
+
+	const modelName: TiktokenModel = "text-embedding-3-small";
 
 	if (!latestCommitID) {
-		await indexAllFiles(repo, client, head.id);
+		await indexAllFiles(repo, client, head.id, modelName, BATCH_SIZE);
 		await commits.add({
 			ids: [head.id],
 			documents: [head.comment],
@@ -29,8 +34,8 @@ export async function storeCommit(repo: GitRepo) {
 	}
 
 	if (head.id !== latestCommitID) {
-		await indexDiffs(repo, client, latestCommitID, head.id);
-		await commits.update({ ids: [latestCommitID], metadatas: { latest: null } })
+		await indexDiffs(repo, client, latestCommitID, head.id, modelName, BATCH_SIZE);
+		await commits.update({ ids: [latestCommitID], metadatas: [{ latest: null }] })
 		await commits.add({
 			ids: [head.id],
 			documents: [head.comment],
