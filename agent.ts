@@ -6,10 +6,10 @@ import { GitRepo } from "./git-repo.js";
 import type { StepOutcome } from "./tool.js";
 import { generatePlan } from "./generate-agent-plan.js";
 import { finalizeAnswer } from "./finalize-plan.js";
-import { index } from "./sync-repo.js";
+import { syncRepo } from "./sync-repo.js";
 
 export async function agent(userQuery: string, repo: GitRepo) {
-	const collection = await index(repo);
+	const collection = await syncRepo(repo);
 
 	const tools: Tool[] = [
 		symbolSearchTool(collection),
