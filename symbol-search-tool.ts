@@ -38,6 +38,11 @@ export const symbolSearchTool = (collection: Collection): Tool => {
 }
 
 const SymbolSearchArgsSchema = z.object({
-	// TODO
+	query: z
+		.string()
+		.describe("Symbol name to search."),
+	includePaths: z
+		.array(z.string())
+		.optional()
+		.describe("Optional list of file paths to limit the search scope.")
 });
-
