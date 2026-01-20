@@ -1,9 +1,7 @@
 import OpenAI from "openai";
 import { zodResponseFormat } from "openai/helpers/zod.js";
-import type { TodoStep } from "./agent-tasks.js";
-import type { StepOutcome } from "./tool.js";
-import type { PlanDecision } from "./tool.js";
-import { PlanDecisionSchema } from "./tool.js";
+import { PlanDecisionSchema, type PlanDecision, type StepOutcome } from "../../tools/base.js";
+import type { TodoStep } from "../agent-tasks.js";
 
 export async function evaluate(args: {
 	userQuery: string;

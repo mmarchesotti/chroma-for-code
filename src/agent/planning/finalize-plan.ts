@@ -1,4 +1,4 @@
-import type { StepOutcome } from "./tool.js";
+import type { StepOutcome } from "../../tools/base.js";
 
 export async function finalizeAnswer(args: {
 	userQuery: string,

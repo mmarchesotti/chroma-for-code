@@ -1,7 +1,7 @@
 import { zodResponseFormat } from "openai/helpers/zod.js";
-import { TodoPlanSchema } from "./agent-tasks.js";
 import OpenAI from "openai";
 import z from "zod";
+import { TodoPlanSchema } from "../agent-tasks.js";
 
 type TodoPlan = z.infer<typeof TodoPlanSchema>;
 

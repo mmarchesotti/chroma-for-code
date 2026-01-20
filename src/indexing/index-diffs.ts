@@ -1,9 +1,9 @@
 import { ChromaClient } from "chromadb";
-import { chunkFile } from "./chunk-file.js";
-import type { Chunk } from "./split-chunk.js";
 import { addBatch } from "./add-batch.js";
-import { GitRepo } from "./git-repo.js";
 import type { TiktokenModel } from "tiktoken";
+import type { GitRepo } from "../utils/git.js";
+import type { Chunk } from "../utils/chunking/split-chunk.js";
+import { chunkFile } from "../utils/chunking/chunk-file.js";
 
 export async function indexDiffs(
 	repo: GitRepo, client: ChromaClient, oldCommit: string, newCommit: string, modelName: TiktokenModel, batchSize: number

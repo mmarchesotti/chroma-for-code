@@ -1,8 +1,8 @@
 import { CloudClient } from "chromadb";
 import { indexDiffs } from "./index-diffs.js";
-import { GitRepo } from "./git-repo.js";
 import { indexAllFiles } from "./index-repo.js";
 import type { TiktokenModel } from "tiktoken";
+import type { GitRepo } from "../utils/git.js";
 
 const BATCH_SIZE = 100;
 

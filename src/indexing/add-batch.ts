@@ -1,5 +1,5 @@
-import type { Chunk } from "./split-chunk.js";
 import type { Collection } from "chromadb";
+import type { Chunk } from "../utils/chunking/split-chunk.js";
 
 export async function addBatch(
 	chunks: Chunk[], collection: Collection, batchSize: number

@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { TodoStepSchema } from './agent-tasks.js';
+import { TodoStepSchema } from '../agent/agent-tasks.js';
 
 export type Tool = {
 	name: string;

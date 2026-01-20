@@ -1,9 +1,8 @@
 import { OpenAI } from 'openai'
-import { StepOutcomeSchema, type Tool } from './tool.js';
 import { zodResponseFormat } from 'openai/helpers/zod.js';
 import type { TodoStep } from './agent-tasks.js';
-import type { StepOutcome } from './tool.js';
 import type { ChatCompletionTool } from 'openai/resources';
+import { StepOutcomeSchema, type StepOutcome, type Tool } from '../tools/base.js';
 
 export async function runStep(opts: {
 	step: TodoStep;

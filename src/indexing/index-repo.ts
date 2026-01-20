@@ -1,13 +1,13 @@
 import { ChromaClient } from "chromadb";
 import { OpenAIEmbeddingFunction } from "@chroma-core/openai";
-import type { Chunk } from "./split-chunk.js";
 import fs from 'node:fs'
 import path from 'node:path'
 import ignore from 'ignore'
-import { GitRepo } from "./git-repo.js";
-import { chunkFile } from "./chunk-file.js";
 import { addBatch } from "./add-batch.js";
 import type { TiktokenModel } from "tiktoken";
+import type { GitRepo } from "../utils/git.js";
+import type { Chunk } from "../utils/chunking/split-chunk.js";
+import { chunkFile } from "../utils/chunking/chunk-file.js";
 
 export async function indexAllFiles(repo: GitRepo, client: ChromaClient, commitID: string, modelName: TiktokenModel, batchSize: number) {
 	const ig = ignore();

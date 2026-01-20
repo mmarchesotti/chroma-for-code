@@ -1,8 +1,8 @@
 import { CloudClient } from "chromadb";
-import { chunkFile } from "./chunk-file.js";
 import { OpenAIEmbeddingFunction } from "@chroma-core/openai";
 import * as dotenv from "dotenv";
-import { getAllFiles } from "./get-files.js";
+import { getAllFiles } from "../utils/fs.js";
+import { chunkFile } from "../utils/chunking/chunk-file.js";
 
 dotenv.config();
 

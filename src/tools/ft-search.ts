@@ -1,6 +1,6 @@
 import type { Collection } from "chromadb";
-import type { Tool } from "./tool.js";
 import { z } from 'zod';
+import type { Tool } from "./base.js";
 
 export const ftSearchTool = (collection: Collection): Tool => {
 	return {

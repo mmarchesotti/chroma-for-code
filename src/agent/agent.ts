@@ -1,17 +1,16 @@
-import { symbolSearchTool } from "./symbol-search-tool.js";
-import { regexSearchTool } from "./regex-search-tool.js";
-import { semanticSearchTool } from "./semantic-search-tool.js";
-import { ftSearchTool } from "./ft-search-tool.js";
-import { getFileTool } from "./get-file-tool.js";
-import { runShellCommandTool } from "./run-shell-command-tool.js";
-import type { Tool } from "./tool.js";
+import { syncRepo } from "../indexing/sync-repo.js";
+import type { StepOutcome, Tool } from "../tools/base.js";
+import { ftSearchTool } from "../tools/ft-search.js";
+import { getFileTool } from "../tools/get-file.js";
+import { regexSearchTool } from "../tools/regex-search.js";
+import { runShellCommandTool } from "../tools/run-shell.js";
+import { semanticSearchTool } from "../tools/semantic-search.js";
+import { symbolSearchTool } from "../tools/symbol-search.js";
+import type { GitRepo } from "../utils/git.js";
+import { evaluate } from "./planning/evaluate-plan.js";
+import { finalizeAnswer } from "./planning/finalize-plan.js";
+import { generatePlan } from "./planning/generate-agent-plan.js";
 import { runStep } from "./run-step.js";
-import { evaluate } from "./evaluate-plan.js";
-import { GitRepo } from "./git-repo.js";
-import type { StepOutcome } from "./tool.js";
-import { generatePlan } from "./generate-agent-plan.js";
-import { finalizeAnswer } from "./finalize-plan.js";
-import { syncRepo } from "./sync-repo.js";
 
 export async function agent(userQuery: string, repo: GitRepo) {
 	const collection = await syncRepo(repo);
