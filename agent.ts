@@ -1,6 +1,7 @@
 import { symbolSearchTool } from "./symbol-search-tool.js";
 import { regexSearchTool } from "./regex-search-tool.js";
 import { semanticSearchTool } from "./semantic-search-tool.js";
+import { ftSearchTool } from "./ft-search-tool.js";
 import type { Tool } from "./tool.js";
 import { runStep } from "./run-step.js";
 import { evaluate } from "./evaluate-plan.js";
@@ -17,7 +18,7 @@ export async function agent(userQuery: string, repo: GitRepo) {
 		symbolSearchTool(collection),
 		regexSearchTool(collection),
 		semanticSearchTool(collection),
-		// ftSearchTool,
+		ftSearchTool(collection),
 		// getFileTool,
 		// runShellCommandTool
 	];
