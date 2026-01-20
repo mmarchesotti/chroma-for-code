@@ -3,6 +3,7 @@ import { regexSearchTool } from "./regex-search-tool.js";
 import { semanticSearchTool } from "./semantic-search-tool.js";
 import { ftSearchTool } from "./ft-search-tool.js";
 import { getFileTool } from "./get-file-tool.js";
+import { runShellCommandTool } from "./run-shell-command-tool.js";
 import type { Tool } from "./tool.js";
 import { runStep } from "./run-step.js";
 import { evaluate } from "./evaluate-plan.js";
@@ -21,7 +22,7 @@ export async function agent(userQuery: string, repo: GitRepo) {
 		semanticSearchTool(collection),
 		ftSearchTool(collection),
 		getFileTool(collection),
-		// runShellCommandTool
+		runShellCommandTool(),
 	];
 
 	let steps = (await generatePlan(userQuery)).steps;
