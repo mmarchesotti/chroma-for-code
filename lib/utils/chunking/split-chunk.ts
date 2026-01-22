@@ -1,8 +1,8 @@
 import { encoding_for_model, type TiktokenModel } from "tiktoken";
-import { uuidv4, ZodUUID } from "zod";
+import { v4 as uuidv4 } from "uuid"
 
 export type Chunk = {
-	id: ZodUUID,
+	id: string,
 	document: string,
 	startLine: number,
 	endLine: number,
