@@ -64,5 +64,5 @@ export function split(src: string, startLine: number, model: TiktokenModel): Chu
 
 function getMaxTokens(model: TiktokenModel): number {
 	// TODO
-	return 100;
+	return 1000;
 }
