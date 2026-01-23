@@ -5,7 +5,6 @@ export async function addBatch(
 	chunks: Chunk[], collection: Collection, batchSize: number
 ) {
 	const batch = chunks.slice(0, batchSize);
-	console.log(batch)
 	await collection.add({
 		ids: batch.map((chunk) => chunk.id),
 		documents: batch.map((chunk) => chunk.document),
