@@ -45,5 +45,8 @@ export async function syncRepo(repo: GitRepo) {
 		latestCommitID = head.id;
 	}
 
-	return client.getCollection({ name: latestCommitID });
+	return client.getCollection({
+		name: latestCommitID,
+		embeddingFunction: embedder,
+	});
 }

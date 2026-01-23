@@ -3,14 +3,17 @@ import { addBatch } from "./add-batch";
 import type { GitRepo } from "../utils/git";
 import type { Chunk } from "../utils/chunking/split-chunk";
 import { chunkFile } from "../utils/chunking/chunk-file";
+import { GeminiEmbedder } from "../model/gemini-embedding";
 
 export async function indexDiffs(
 	repo: GitRepo, client: ChromaClient, oldCommit: string, newCommit: string, batchSize: number
 ) {
 	const diffs = await repo.diffs(oldCommit, newCommit);
 
+	const embedder = new GeminiEmbedder();
 	const oldCollection = await client.getCollection({
 		name: oldCommit,
+		embeddingFunction: embedder,
 	});
 
 	const newCollection = await oldCollection.fork({ name: newCommit });
