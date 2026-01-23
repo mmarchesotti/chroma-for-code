@@ -3,21 +3,20 @@ import path from 'node:path';
 import Parser from 'tree-sitter'
 import { LANG_CONFIG } from './chunk';
 import type { SyntaxNode } from 'tree-sitter';
-import { type TiktokenModel } from 'tiktoken';
 import { split, type Chunk } from './split-chunk';
 
-export function chunkFile(filePath: string, model: TiktokenModel): Chunk[] {
+export function chunkFile(filePath: string): Chunk[] {
 	const fileExtension = path.extname(filePath);
 
 	const langConfig = LANG_CONFIG[fileExtension as keyof typeof LANG_CONFIG];
 	if (!langConfig) {
-		return []; // or fallback to naive line-based chunking
+		return [];
 	}
 
 	const fileContent = fs.readFileSync(filePath, 'utf-8');
 
 	const parser = new Parser();
-	parser.setLanguage(langConfig.language);
+	parser.setLanguage(langConfig.language as any);
 	const tree = parser.parse(fileContent);
 
 	const chunks: Chunk[] = [];
@@ -34,16 +33,16 @@ export function chunkFile(filePath: string, model: TiktokenModel): Chunk[] {
 	for (const node of wantedNodes) {
 		if (cursor < node.startIndex) {
 			const gap = fileContent.slice(cursor, node.startIndex);
-			chunks.push(...split(gap, line, model));
+			chunks.push(...split(gap, line));
 		}
 
 		const nodeContent = fileContent.slice(node.startIndex, node.endIndex);
 		const nodeLine = node.startPosition.row;
-		const nodeSplits = split(nodeContent, nodeLine, model);
+		const nodeSplits = split(nodeContent, nodeLine);
 		chunks.push(...nodeSplits.map((n) => {
 			return {
 				...n,
-				symbol: node.childForFieldName("name")!.text // symbol node (class)
+				symbol: node.childForFieldName("name")!.text
 			}
 		}));
 

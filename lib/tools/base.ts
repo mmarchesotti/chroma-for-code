@@ -9,7 +9,6 @@ export type Tool = {
 	execute: (args: any) => Promise<any>;
 };
 
-// used to generate summary
 export const StepOutcomeSchema = z.object({
 	status: z.enum(["succeeded", "blocked", "failed", "timeout"]),
 	stepId: z.string(),

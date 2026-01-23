@@ -1,22 +1,18 @@
-import { OpenAI } from 'openai'
-import { zodResponseFormat } from 'openai/helpers/zod';
-import type { TodoStep } from './agent-tasks';
-import type { ChatCompletionTool } from 'openai/resources';
 import { StepOutcomeSchema, type StepOutcome, type Tool } from '../tools/base';
+import type { TodoStep } from './agent-tasks';
+// Ensure this imports your generic interfaces
+import { LLMProvider, Message } from '../model/types';
 
 export async function runStep(opts: {
 	step: TodoStep;
 	userQuery: string;
 	tools: Tool[];
 	maxTurns?: number;
+	provider: LLMProvider;
 }): Promise<StepOutcome> {
-	const { step, userQuery, tools, maxTurns = 10 } = opts;
+	const { step, userQuery, tools, maxTurns = 10, provider } = opts;
 
-	const openai = new OpenAI({
-		apiKey: process.env.OPENAI_API_KEY,
-	});
-
-	const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+	const messages: Message[] = [
 		{
 			role: "system",
 			content:
@@ -24,7 +20,8 @@ export async function runStep(opts: {
 				"When you have enough information to summarize the result, stop calling tools.",
 		},
 		{
-			role: "developer",
+
+			role: "developer" as any,
 			content:
 				`Step (${step.id}): ${step.title}\n` +
 				`Goal: ${step.description}\n` +
@@ -39,38 +36,46 @@ export async function runStep(opts: {
 		},
 	];
 
-	const openaiTools = toOpenAITools(tools);
-
 	let turns = 0;
 	while (turns < maxTurns) {
-		const resp = await openai.chat.completions.create({
-			model: "gpt-4o-2024-08-06",
-			messages,
-			tools: openaiTools,
-			parallel_tool_calls: false,
-		});
+		const llmTools = tools.map(t => ({
+			name: t.name,
+			description: t.description,
+			parameters: t.parameters as any
+		}));
+
+		const response = await provider.generateToolCalls(messages, llmTools);
 		turns += 1;
 
-		const assistant = resp.choices[0]?.message;
-		const call = assistant?.tool_calls?.[0];
-
-		if (!call || call.type != 'function') break;
-
-		const tool = tools.find((t) => t.name === call.function.name)!;
-		if (!tool) {
-			return {
-				status: "failed",
-				stepId: step.id,
-				summary: `Model hallucinated a tool: ${call.function.name}`,
-			};
+		if (response.content) {
+			messages.push({
+				role: "assistant",
+				content: response.content
+			});
 		}
-		const args = tool.parse(call.function.arguments);
-		const result = await tool.execute(args);
+
+		const call = response.toolCalls[0];
+		if (!call) {
+			break;
+		}
+
+		const tool = tools.find((t) => t.name === call.name);
+		if (!tool) {
+
+			messages.push({
+				role: "user",
+				content: `System Error: Hallucinated tool '${call.name}'`
+			});
+			continue;
+		}
+
+		console.log(`[Step ${step.id}] Executing ${tool.name}`);
+
+		const result = await tool.execute(call.args);
 
 		messages.push({
-			role: "tool",
-			tool_call_id: call.id,
-			content: JSON.stringify(result),
+			role: "user",
+			content: `Tool '${tool.name}' output: ${JSON.stringify(result)}`
 		});
 	}
 
@@ -82,32 +87,10 @@ export async function runStep(opts: {
 		};
 	}
 
-	const finalize = await openai.chat.completions.parse({
-		model: "gpt-4o-2024-08-06",
-		messages: [
-			...messages,
-			{
-				role: "developer",
-				content:
-					"Now finalize this step. Return ONLY JSON matching the schema (no prose).",
-			},
-		],
-		response_format: zodResponseFormat(StepOutcomeSchema, "step_outcome"),
+	messages.push({
+		role: "user",
+		content: "Now finalize this step. Return ONLY JSON matching the schema (no prose)."
 	});
 
-	return finalize.choices[0]?.message.parsed!;
-}
-
-function toOpenAITools(tools: Tool[]): ChatCompletionTool[] {
-	const openaiTools = tools.map(tool => {
-		return {
-			type: "function" as const,
-			function: {
-				name: tool.name,
-				description: tool.description,
-				parameters: tool.parameters,
-			}
-		}
-	});
-	return openaiTools;
+	return await provider.generateResponse(messages, StepOutcomeSchema);
 }

@@ -1,14 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, Circle, Loader2, Send } from "lucide-react";
+import { CheckCircle2, Circle, Loader2, Send, Settings } from "lucide-react";
 
-// Define our types locally so we don't need external libraries
 type AgentStep = { id: string; label: string; status: "pending" | "running" | "done" };
-type Message = { role: "user" | "assistant"; content: string };
+type Message = { role: "user" | "assistant" | "developer"; content: string };
+
+const AVAILABLE_MODELS = [
+	{ id: "gemini-3-flash-preview", name: "Gemini 3 Flash" },
+	{ id: "gpt-3.5-turbo", name: "GPT-3.5 Turbo" },
+	{ id: "gpt-4-turbo", name: "GPT-4 Turbo" },
+];
 
 export default function Page() {
 	const [input, setInput] = useState("");
+	const [selectedModel, setSelectedModel] = useState(AVAILABLE_MODELS[0].id);
 	const [messages, setMessages] = useState<Message[]>([]);
 	const [steps, setSteps] = useState<AgentStep[]>([]);
 	const [logs, setLogs] = useState<string[]>([]);
@@ -18,7 +24,6 @@ export default function Page() {
 		e.preventDefault();
 		if (!input.trim()) return;
 
-		// 1. Optimistically add user message
 		const userMsg = { role: "user" as const, content: input };
 		setMessages((prev) => [...prev, userMsg]);
 		setInput("");
@@ -27,16 +32,18 @@ export default function Page() {
 		setLogs([]);
 
 		try {
-			// 2. Manual Fetch Request
 			const response = await fetch("/api/chat", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ messages: [...messages, userMsg] }),
+				body: JSON.stringify({
+					messages: [...messages, userMsg],
+
+					model: selectedModel,
+				}),
 			});
 
 			if (!response.body) throw new Error("No response body");
 
-			// 3. Read the stream manually
 			const reader = response.body.getReader();
 			const decoder = new TextDecoder();
 			let buffer = "";
@@ -45,10 +52,9 @@ export default function Page() {
 				const { done, value } = await reader.read();
 				if (done) break;
 
-				// Decode chunks and split by newline (NDJSON)
 				buffer += decoder.decode(value, { stream: true });
 				const lines = buffer.split("\n");
-				buffer = lines.pop() || ""; // Keep incomplete line in buffer
+				buffer = lines.pop() || "";
 
 				for (const line of lines) {
 					if (!line.trim()) continue;
@@ -68,7 +74,6 @@ export default function Page() {
 		}
 	};
 
-	// 4. Update UI based on event type
 	const handleUpdate = (update: any) => {
 		if (update.type === "plan") {
 			setSteps(update.steps.map((s: string) => ({ id: s, label: s, status: "pending" })));
@@ -89,7 +94,6 @@ export default function Page() {
 
 	return (
 		<div className="flex h-screen bg-gray-50 text-gray-900 font-sans">
-			{/* LEFT: Chat */}
 			<div className="flex-1 flex flex-col border-r border-gray-200 bg-white">
 				<div className="flex-1 overflow-y-auto p-4 space-y-4">
 					{messages.map((m, i) => (
@@ -113,32 +117,56 @@ export default function Page() {
 				</form>
 			</div>
 
-			{/* RIGHT: Agent Internals */}
-			<div className="w-[400px] bg-gray-50 p-6 overflow-y-auto border-l">
-				<h2 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Agent Logic</h2>
+			<div className="w-[400px] bg-gray-50 p-6 overflow-y-auto border-l flex flex-col gap-6">
 
-				{steps.length > 0 && (
-					<div className="mb-6 space-y-2">
-						<h3 className="font-semibold">Plan</h3>
-						{steps.map((step, i) => (
-							<div key={i} className="flex items-center gap-2 text-sm">
-								{step.status === "done" && <CheckCircle2 className="w-4 h-4 text-green-500" />}
-								{step.status === "running" && <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />}
-								{step.status === "pending" && <Circle className="w-4 h-4 text-gray-300" />}
-								<span className={step.status === "done" ? "text-gray-500" : ""}>{step.label}</span>
-							</div>
-						))}
+				<div>
+					<div className="flex items-center gap-2 mb-3">
+						<Settings className="w-4 h-4 text-gray-500" />
+						<h2 className="text-sm font-bold text-gray-500 uppercase tracking-wider">Configuration</h2>
 					</div>
-				)}
+					<div className="bg-white p-3 rounded border border-gray-200 shadow-sm">
+						<label className="block text-xs font-semibold text-gray-600 mb-2">Model Provider</label>
+						<select
+							value={selectedModel}
+							onChange={(e) => setSelectedModel(e.target.value)}
+							className="w-full p-2 text-sm border rounded bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none"
+							disabled={isLoading}
+						>
+							{AVAILABLE_MODELS.map(model => (
+								<option key={model.id} value={model.id}>
+									{model.name}
+								</option>
+							))}
+						</select>
+					</div>
+				</div>
 
-				{logs.length > 0 && (
-					<div>
-						<h3 className="font-semibold mb-2">Logs</h3>
-						<div className="bg-white p-3 rounded border text-xs font-mono text-gray-600 h-64 overflow-y-auto">
-							{logs.map((log, i) => <div key={i} className="border-b last:border-0 py-1">{log}</div>)}
+				<div>
+					<h2 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Agent Logic</h2>
+
+					{steps.length > 0 && (
+						<div className="mb-6 space-y-2">
+							<h3 className="font-semibold text-sm">Plan</h3>
+							{steps.map((step, i) => (
+								<div key={i} className="flex items-center gap-2 text-sm">
+									{step.status === "done" && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+									{step.status === "running" && <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />}
+									{step.status === "pending" && <Circle className="w-4 h-4 text-gray-300" />}
+									<span className={step.status === "done" ? "text-gray-500" : ""}>{step.label}</span>
+								</div>
+							))}
 						</div>
-					</div>
-				)}
+					)}
+
+					{logs.length > 0 && (
+						<div>
+							<h3 className="font-semibold mb-2 text-sm">Logs</h3>
+							<div className="bg-white p-3 rounded border text-xs font-mono text-gray-600 h-64 overflow-y-auto">
+								{logs.map((log, i) => <div key={i} className="border-b last:border-0 py-1 break-all">{log}</div>)}
+							</div>
+						</div>
+					)}
+				</div>
 			</div>
 		</div>
 	);

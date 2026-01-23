@@ -1,30 +1,53 @@
-import { zodResponseFormat } from "openai/helpers/zod";
-import OpenAI from "openai";
-import z from "zod";
-import { TodoPlanSchema } from "../agent-tasks";
+import { v4 as uuidv4 } from "uuid";
+import { z } from "zod";
+import { TodoPlanSchema, TodoStepSchema } from "../agent-tasks";
+import { LLMProvider, Message } from "../../model/types";
+
+// 1. Define what we want the LLM to give us (Just the list)
+const PlanArraySchema = z.array(TodoStepSchema);
 
 type TodoPlan = z.infer<typeof TodoPlanSchema>;
 
 export async function generatePlan(
 	prompt: string,
-	maxSteps: number = 3,
+	provider: LLMProvider,
+	maxSteps: number = 5,
 ): Promise<TodoPlan> {
-	const openai = new OpenAI({
-		apiKey: process.env.OPENAI_API_KEY,
-	});
 
-	const completion = await openai.chat.completions.parse({
-		model: "gpt-4o-2024-08-06",
-		temperature: 0.2,
-		messages: [
-			{
-				role: "system",
-				content: `You are a senior software engineer. The user will give you a task or ask a question about the codebase they are working with. Break the task into concrete, verifiable steps. The maximum number of steps is ${maxSteps}. The status of the first item should be "executing". Return only JSON that matches the schema. `,
-			},
-			{ role: "user", content: prompt },
-		],
-		response_format: zodResponseFormat(TodoPlanSchema, "todo_plan"),
-	});
+	const messages: Message[] = [
+		{
+			role: "system",
+			content: `You are a senior software engineer.
+      
+      GOAL: Break the user's task into concrete, verifiable steps.
+      
+      RULES:
+      1. The maximum number of steps is ${maxSteps}.
+      2. The status of the first step MUST be "executing".
+      3. The status of all other steps MUST be "pending".
+      
+      OUTPUT FORMAT:
+      Return a JSON ARRAY of objects.
+      
+      EXAMPLE:
+      [
+        {
+          "id": "step-1",
+          "title": "Analyze codebase",
+          "description": "Run symbol search...",
+          "status": "executing"
+        }
+      ]`,
+		},
+		{ role: "user", content: prompt },
+	];
 
-	return completion.choices[0]?.message.parsed as TodoPlan;
+
+	const stepsArray = await provider.generateResponse(messages, PlanArraySchema);
+
+
+	return {
+		id: uuidv4(),
+		steps: stepsArray
+	};
 }

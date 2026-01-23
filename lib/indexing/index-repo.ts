@@ -1,15 +1,14 @@
 import { ChromaClient } from "chromadb";
-import { OpenAIEmbeddingFunction } from "@chroma-core/openai";
 import fs from 'node:fs'
 import path from 'node:path'
 import ignore from 'ignore'
 import { addBatch } from "./add-batch";
-import type { TiktokenModel } from "tiktoken";
 import type { GitRepo } from "../utils/git";
 import type { Chunk } from "../utils/chunking/split-chunk";
 import { chunkFile } from "../utils/chunking/chunk-file";
+import { GeminiEmbedder } from "../model/gemini-embedding";
 
-export async function indexAllFiles(repo: GitRepo, client: ChromaClient, commitID: string, modelName: TiktokenModel, batchSize: number) {
+export async function indexAllFiles(repo: GitRepo, client: ChromaClient, commitID: string, batchSize: number) {
 	const ig = ignore();
 	ig.add(".git");
 
@@ -19,13 +18,10 @@ export async function indexAllFiles(repo: GitRepo, client: ChromaClient, commitI
 		ig.add(content);
 	}
 
-	const embeddingFunction = new OpenAIEmbeddingFunction({
-		modelName: modelName
-	});
-
-	const collection = await client.createCollection({
+	const embedder = new GeminiEmbedder();
+	const collection = await client.getOrCreateCollection({
 		name: commitID,
-		embeddingFunction
+		embeddingFunction: embedder,
 	});
 
 	let chunks: Chunk[] = [];
@@ -46,7 +42,7 @@ export async function indexAllFiles(repo: GitRepo, client: ChromaClient, commitI
 			if (entry.isDirectory()) {
 				await walkRepo(absPath);
 			} else if (entry.isFile()) {
-				const fileChunks = chunkFile(filePath, modelName);
+				const fileChunks = chunkFile(filePath);
 				chunks.push(...fileChunks);
 				if (chunks.length > batchSize) {
 					chunks = await addBatch(chunks, collection, batchSize);

@@ -1,12 +1,11 @@
 import { ChromaClient } from "chromadb";
 import { addBatch } from "./add-batch";
-import type { TiktokenModel } from "tiktoken";
 import type { GitRepo } from "../utils/git";
 import type { Chunk } from "../utils/chunking/split-chunk";
 import { chunkFile } from "../utils/chunking/chunk-file";
 
 export async function indexDiffs(
-	repo: GitRepo, client: ChromaClient, oldCommit: string, newCommit: string, modelName: TiktokenModel, batchSize: number
+	repo: GitRepo, client: ChromaClient, oldCommit: string, newCommit: string, batchSize: number
 ) {
 	const diffs = await repo.diffs(oldCommit, newCommit);
 
@@ -26,7 +25,6 @@ export async function indexDiffs(
 	for (const filePath of [...diffs.added, ...diffs.modified]) {
 		const fileChunks = chunkFile(
 			filePath,
-			modelName,
 		);
 		chunks.push(...fileChunks);
 		if (chunks.length > batchSize) {

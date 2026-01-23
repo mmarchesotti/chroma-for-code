@@ -1,27 +1,23 @@
-import OpenAI from "openai";
-import { zodResponseFormat } from "openai/helpers/zod";
 import { PlanDecisionSchema, type PlanDecision, type StepOutcome } from "../../tools/base";
 import type { TodoStep } from "../agent-tasks";
+import type { LLMProvider, Message } from "../../model/types";
 
 export async function evaluate(args: {
 	userQuery: string;
 	lastOutcome: StepOutcome;
 	remainingSteps: TodoStep[];
+	provider: LLMProvider;
 }): Promise<PlanDecision> {
-	const { userQuery, lastOutcome, remainingSteps } = args;
+	const { userQuery, lastOutcome, remainingSteps, provider } = args;
 
-	const openai = new OpenAI({
-		apiKey: process.env.OPENAI_API_KEY,
-	});
-
-	const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+	const messages: Message[] = [
 		{
 			role: "system",
 			content:
-				"You are the planner for a coding agent. Return ONLY JSON matching the schema"
+				"You are the planner for a coding agent. Return ONLY valid JSON matching the schema with no additional text."
 		},
 		{
-			role: "developer",
+			role: "user",
 			content:
 				`Overall task: ${userQuery}\n` +
 				`Remaining steps: ${JSON.stringify(remainingSteps, null, 2)}\n` +
@@ -29,15 +25,12 @@ export async function evaluate(args: {
 				"Rules:\n" +
 				" - If we already have enough info for a useful answer, choose 'finalize'.\n" +
 				" - If we still need the next step(s) as-is, choose 'continue'.\n" +
-				` - If a different order or new steps would help, choose 'revise' and output new_steps.`,
+				` - If a different order or new steps would help, choose 'revise' and output new_steps.` +
+
+				`\n\nReturn JSON with this structure: { "decision": "continue" | "finalize" | "revise", "new_steps"?: [...] }`
 		},
 	];
 
-	const resp = await openai.chat.completions.parse({
-		model: "gpt-4o-2024-08-06",
-		messages,
-		response_format: zodResponseFormat(PlanDecisionSchema, "plan_decision"),
-	});
 
-	return resp.choices[0]?.message.parsed!;
+	return await provider.generateResponse(messages, PlanDecisionSchema);
 }

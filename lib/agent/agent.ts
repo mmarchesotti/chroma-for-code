@@ -11,6 +11,7 @@ import { evaluate } from "./planning/evaluate-plan";
 import { finalizeAnswer } from "./planning/finalize-plan";
 import { generatePlan } from "./planning/generate-agent-plan";
 import { runStep } from "./run-step";
+import { LLMProvider } from "../model/types";
 
 export type AgentUpdate =
 	| { type: "plan"; steps: string[] }
@@ -21,7 +22,8 @@ export type AgentUpdate =
 export const agent = async (
 	userQuery: string,
 	repo: GitRepo,
-	onUpdate: (update: AgentUpdate) => void
+	onUpdate: (update: AgentUpdate) => void,
+	provider: LLMProvider
 ) => {
 	onUpdate({ type: "log", message: "Syncing repository to database..." });
 	const collection = await syncRepo(repo);
@@ -36,7 +38,8 @@ export const agent = async (
 	];
 
 	onUpdate({ type: "log", message: "Analyzing query and generating plan..." });
-	let plan = await generatePlan(userQuery);
+
+	let plan = await generatePlan(userQuery, provider);
 
 	onUpdate({
 		type: "plan",
@@ -56,6 +59,7 @@ export const agent = async (
 			step,
 			userQuery,
 			tools,
+			provider,
 		});
 
 		onUpdate({
@@ -67,17 +71,16 @@ export const agent = async (
 		steps.shift();
 		outcomes.push(outcome);
 
-		// Handle Failures
 		if (outcome.status === "failed" || outcome.status === "timeout") {
 			onUpdate({ type: "log", message: `Step failed: ${outcome.summary}` });
 		}
-
 		onUpdate({ type: "log", message: "Evaluating progress..." });
 
 		const decision = await evaluate({
 			userQuery,
 			lastOutcome: outcome,
 			remainingSteps: steps,
+			provider,
 		});
 
 		if (decision.decision === "finalize") {
@@ -87,7 +90,7 @@ export const agent = async (
 
 		if (decision.decision === "revise") {
 			onUpdate({ type: "log", message: "Plan revised based on new findings." });
-			steps = decision.newSteps;
+			steps = decision.newSteps!;
 
 			onUpdate({
 				type: "plan",
@@ -99,10 +102,10 @@ export const agent = async (
 		}
 	}
 
-	// --- Final Answer ---
 	const finalAnswer = await finalizeAnswer({
 		userQuery,
 		outcomes,
+		provider,
 	});
 
 	return finalAnswer;

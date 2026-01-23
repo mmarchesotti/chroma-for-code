@@ -1,16 +1,19 @@
 import { agent } from "@/lib/agent/agent";
 import { GitRepo } from "@/lib/utils/git";
-import path from "path";
+import { createLLMProvider } from "@/lib/model/factory";
 
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
-	const { messages } = await req.json();
+
+	const { messages, model } = await req.json();
 	const lastMessage = messages[messages.length - 1].content;
 
 	const encoder = new TextEncoder();
 
 	const repo = new GitRepo(process.cwd());
+
+	const provider = createLLMProvider(model || "gpt-4o-2024-08-06");
 
 	const stream = new ReadableStream({
 		async start(controller) {
@@ -19,13 +22,13 @@ export async function POST(req: Request) {
 			};
 
 			try {
-				// 2. Call agent with ALL required arguments
 				const finalAnswer = await agent(
 					lastMessage,
 					repo,
 					(update) => {
 						sendUpdate(update);
-					}
+					},
+					provider
 				);
 
 				sendUpdate({ type: "answer", content: finalAnswer });

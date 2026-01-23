@@ -36,7 +36,7 @@ export const runShellCommandTool = (): Tool => {
 
 			try {
 				const { stdout, stderr } = await execAsync(command, {
-					maxBuffer: 1024 * 1024 * 5 // 5MB buffer limit
+					maxBuffer: 1024 * 1024 * 5
 				});
 
 				const output = stdout.trim();

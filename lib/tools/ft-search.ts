@@ -32,7 +32,6 @@ export const ftSearchTool = (collection: Collection): Tool => {
 				return `No matches found for string: "${query}"`;
 			}
 
-			// 4. Format Output
 			const content = records.ids.map((_, index) => {
 				const meta = records.metadatas?.[index] as { filePath: string; startLine: number } | undefined;
 				const doc = records.documents?.[index];

@@ -9,7 +9,7 @@ export class GitRepo {
 
 	constructor(repoPath: string) {
 		this.path = repoPath;
-		this.name = path.basename(repoPath); // Automatically gets folder name as repo name
+		this.name = path.basename(repoPath);
 		this.git = simpleGit(repoPath);
 	}
 
