@@ -87,7 +87,7 @@ export class GeminiProvider implements LLMProvider {
 		const geminiTools = tools.map(t => ({
 			name: t.name,
 			description: t.description,
-			parameters: zodToJsonSchema(t.parameters as any)
+			parameters: t.parameters,
 		}));
 
 		const model = this.genAI.getGenerativeModel({
