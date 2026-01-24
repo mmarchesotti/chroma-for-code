@@ -16,7 +16,8 @@ export const regexSearchTool = (collection: Collection): Tool => {
 			}
 		},
 		parse: (input) => RegexSearchArgsSchema.parse(input),
-		execute: async (pattern: string, includePaths?: string[]) => {
+		execute: async (args: { pattern: string, includePaths?: string[] }) => {
+			const { pattern, includePaths } = args;
 			const getFilter: Record<string, any> = {
 				include: ["metadatas", "documents"] as any
 			};

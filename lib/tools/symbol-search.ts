@@ -16,7 +16,8 @@ export const symbolSearchTool = (collection: Collection): Tool => {
 			}
 		},
 		parse: (input) => SymbolSearchArgsSchema.parse(input),
-		execute: async (query: string, includePaths?: string[]) => {
+		execute: async (args: { query: string, includePaths?: string[] }) => {
+			const { query, includePaths } = args;
 			const whereFilter: Record<string, any> = { symbol: query };
 			if (includePaths && includePaths.length > 0) {
 				whereFilter.filePath = { "$in": includePaths }

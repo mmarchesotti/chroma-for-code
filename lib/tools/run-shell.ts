@@ -27,7 +27,9 @@ export const runShellCommandTool = (): Tool => {
 			}
 		},
 		parse: (input) => RunShellArgsSchema.parse(input),
-		execute: async (command: string) => {
+		execute: async (args: { command: string }) => {
+			const { command } = args;
+
 			const isAllowed = ALLOWED_COMMANDS.some(prefix => command.trim().startsWith(prefix));
 
 			if (!isAllowed) {

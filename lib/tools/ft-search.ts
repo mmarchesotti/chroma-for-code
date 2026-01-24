@@ -16,7 +16,9 @@ export const ftSearchTool = (collection: Collection): Tool => {
 			}
 		},
 		parse: (input) => FullTextSearchArgsSchema.parse(input),
-		execute: async (query: string, includePaths?: string[]) => {
+		execute: async (args: { query: string, includePaths?: string[] }) => {
+			const { query, includePaths } = args;
+
 			const whereDocumentFilter = { "$contains": query };
 			const getFilter: Record<string, any> = {
 				whereDocument: whereDocumentFilter,

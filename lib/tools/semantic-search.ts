@@ -17,7 +17,9 @@ export const semanticSearchTool = (collection: Collection): Tool => {
 			}
 		},
 		parse: (input) => SemanticSearchArgsSchema.parse(input),
-		execute: async (query: string, includePaths?: string[], limit: number = 5) => {
+		execute: async (args: { query: string, includePaths?: string[], limit?: number }) => {
+			const { query, includePaths, limit = 5 } = args;
+
 			const queryFilter: Record<string, any> = {
 				queryTexts: [query],
 				nResults: limit,

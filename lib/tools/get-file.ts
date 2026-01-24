@@ -15,7 +15,8 @@ export const getFileTool = (collection: Collection): Tool => {
 			}
 		},
 		parse: (input) => GetFileArgsSchema.parse(input),
-		execute: async (filePath: string) => {
+		execute: async (args = { filePath: string }) => {
+			const { filePath } = args;
 
 			const records = await collection.get({
 				where: { filePath: filePath },
