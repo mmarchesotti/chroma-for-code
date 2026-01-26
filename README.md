@@ -46,9 +46,14 @@ npm install
 
 3. Configure your environment variables (create a `.env` file):
 ```env
-OPENAI_API_KEY=your_key
-GOOGLE_GENERATIVE_AI_API_KEY=your_key
+# AI Providers
+OPENAI_API_KEY=your_openai_key
+GOOGLE_API_KEY=your_google_key
 
+# ChromaDB Configuration
+CHROMA_API_KEY=your_chroma_key
+CHROMA_TENANT=default_tenant
+CHROMA_DATABASE=default_database
 ```
 
 
