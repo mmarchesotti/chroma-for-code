@@ -27,7 +27,12 @@ export async function evaluate(args: {
 				" - If we still need the next step(s) as-is, choose 'continue'.\n" +
 				` - If a different order or new steps would help, choose 'revise' and output new_steps.` +
 
-				`\n\nReturn JSON with this structure: { "decision": "continue" | "finalize" | "revise", "new_steps"?: [...] }`
+				`\n\nReturn JSON with this structure:
+				{
+					"decision": "continue" | "finalize" | "revise",
+					"reason": "Short explanation of why",
+					"new_steps"?: [...]
+				}`
 		},
 	];
 

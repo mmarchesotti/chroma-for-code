@@ -61,7 +61,6 @@ export async function runStep(opts: {
 
 		const tool = tools.find((t) => t.name === call.name);
 		if (!tool) {
-
 			messages.push({
 				role: "user",
 				content: `System Error: Hallucinated tool '${call.name}'`
@@ -89,7 +88,17 @@ export async function runStep(opts: {
 
 	messages.push({
 		role: "user",
-		content: "Now finalize this step. Return ONLY JSON matching the schema (no prose)."
+		content: `We are done with tools. Now finalize this step.
+    
+    REQUIRED OUTPUT FORMAT:
+    You must return a strict JSON object matching the schema.
+    DO NOT return "action" or "action_input".
+    
+    The JSON must have these fields:
+    - status: "succeeded" or "failed"
+    - summary: A concise text summary of what was achieved.
+    - stepId: "${step.id}"
+    `
 	});
 
 	return await provider.generateResponse(messages, StepOutcomeSchema);
